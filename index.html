@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحدي أبطال الجبر - غرفة الهروب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #3b82f6; /* لون الخلفية الأزرق الثابت */
+            min-height: 100vh;
+        }
+        
+        /* نمط النقاط البيضاء الخفيفة */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.25) 2px, transparent 2px);
+            background-size: 30px 30px;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* تأثير اهتزاز خفيف للمحطات */
+        .game-card {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .math-text {
+            direction: ltr;
+            display: inline-block;
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            background: #f1f5f9;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+        }
+        .station {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .station.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* قفل الأرقام */
+        .number-lock {
+            width: 4rem;
+            height: 5rem;
+            font-size: 2.5rem;
+            text-align: center;
+            border-radius: 0.75rem;
+            border: 4px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .number-lock:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-slate-800 relative z-0">
+
+    <div class="max-w-3xl w-full bg-white/95 backdrop-blur-md rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden border-[5px] border-white/60 game-card">
+        
+        <!-- Header -->
+        <div class="bg-blue-700 text-white p-6 text-center relative border-b-4 border-blue-800">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-2">🏆 تحدي أبطال الجبر</h1>
+            <p class="text-blue-100 text-lg">غرفة الهروب: فك الشفرات، وافتح الصندوق السري!</p>
+            
+            <!-- Progress Bar -->
+            <div class="mt-4 bg-blue-900 rounded-full h-3 w-full max-w-md mx-auto overflow-hidden">
+                <div id="progress-bar" class="bg-yellow-400 h-full transition-all duration-500 w-0"></div>
+            </div>
+            <p id="progress-text" class="text-sm mt-1 text-blue-200">المقدمة</p>
+        </div>
+
+        <div class="p-6 md:p-8">
+
+            <!-- Intro Screen -->
+            <div id="intro" class="station active text-center">
+                <div class="mb-4">
+                    <svg class="w-24 h-24 text-blue-500 mx-auto animate-bounce drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <!-- الترحيب بصف 8.2 -->
+                <h2 class="text-3xl font-extrabold text-blue-800 mb-4 bg-blue-50 inline-block px-6 py-2 rounded-full border-2 border-blue-200">أهلاً يا صف 8.2! مرحباً بكم!</h2>
+                
+                <p class="text-lg text-slate-600 mb-6 leading-relaxed">
+                    أنتم الآن محتجزون في <strong>غرفة الهروب الرياضية</strong>، وأمامكم 3 محطات مغلقة بأقفال سرية. للهروب، يجب عليكم حل تحديات الجبر وإيجاد الرموز السرية لفتح الأقفال. استعدوا!
+                </p>
+                
+                <div class="mb-8 bg-blue-50 p-6 rounded-2xl border-2 border-blue-100">
+                    <label class="block text-slate-700 font-extrabold mb-3 text-xl">✍️ أدخل اسمك الثلاثي لتبدأ مغامرتك:</label>
+                    <input type="text" id="studentName" class="w-full max-w-sm mx-auto p-4 border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:outline-none text-center text-xl shadow-inner font-bold" placeholder="الاسم الثلاثي هنا...">
+                    <p id="nameError" class="text-red-500 mt-2 hidden text-sm font-bold">الرجاء إدخال اسمك للإستمرار نحو الغرفة الأولى!</p>
+                </div>
+                
+                <button onclick="startChallenge()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-full shadow-[0_5px_15px_rgba(37,99,235,0.4)] transform transition hover:scale-105 hover:-translate-y-1 text-2xl">
+                    🚪 دخول الغرفة الأولى
+                </button>
+            </div>
+
+            <!-- Station 1: Distributive Property -->
+            <div id="station-1" class="station">
+                <h2 class="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-800 w-10 h-10 rounded-full flex items-center justify-center ml-3 shadow-sm border border-blue-300">1</span>
+                    الغرفة الأولى: الباب ذو القفل الأبجدي
+                </h2>
+                <p class="mb-6 text-slate-600 font-semibold bg-slate-50 p-3 rounded-lg border-r-4 border-blue-400">
+                    قم بفك الأقواس أدناه لتعرف الحرف الصحيح لكل تعبير. كلمة سر الباب تتكون من دمج حرف التعبير الأول مع حرف التعبير الثاني.
+                </p>
+
+                <div class="space-y-6">
+                    <!-- Q1 -->
+                    <div class="bg-white p-5 rounded-xl border-2 border-slate-200 shadow-sm">
+                        <p class="text-lg mb-4 font-bold">1. ماهو التفكيك الصحيح للتعبير: <span class="math-text bg-blue-50 text-blue-800">2(x + 5)</span> ؟</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">أ</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">2x + 5</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-blue-600 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-blue-400 bg-blue-100">ب</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">2x + 10</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">ج</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">7x</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">د</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">x + 10</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="bg-white p-5 rounded-xl border-2 border-slate-200 shadow-sm">
+                        <p class="text-lg mb-4 font-bold">2. ماهو التفكيك الصحيح للتعبير: <span class="math-text bg-blue-50 text-blue-800">-4(x + 2)</span> ؟</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-blue-600 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-blue-400 bg-blue-100">أ</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">-4x - 8</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">ب</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">-4x + 8</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">ج</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">-4x + 2</span>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg bg-slate-50 transition cursor-default">
+                                <span class="font-extrabold text-xl text-slate-400 ml-3 w-8 h-8 flex items-center justify-center border-2 rounded-full border-slate-300">د</span>
+                                <span class="math-text bg-transparent border-0 p-0 text-base">4x - 8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Escape Room Lock -->
+                <div class="mt-8 bg-slate-800 p-8 rounded-2xl border-4 border-slate-600 text-center shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, #fff 10px, #fff 20px);"></div>
+                    
+                    <h3 class="text-white text-2xl font-bold mb-4 relative z-10 flex items-center justify-center gap-2">
+                        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        قفل الباب
+                    </h3>
+                    <label class="block text-slate-300 font-bold mb-4 relative z-10">أدخل الحرفين الصحيحين بالترتيب لفتح الباب (بدون مسافات):</label>
+                    
+                    <div class="relative z-10">
+                        <input type="text" id="station1-lock" maxlength="2" class="w-32 text-center text-4xl font-extrabold p-3 rounded-lg text-slate-800 bg-white border-4 border-slate-400 focus:border-yellow-400 focus:outline-none tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.2)]" placeholder="--">
+                    </div>
+
+                    <div id="error-1" class="hidden mt-4 text-red-200 font-bold bg-red-900/80 p-3 rounded-lg text-center relative z-10 border border-red-500">
+                        ❌ القفل لا يستجيب! راجع حلك وتأكد من ترتيب العمليات والأحرف (الحرف الأول ثم الثاني).
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button onclick="checkStation1()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-full shadow-lg transition text-xl w-full sm:w-auto">
+                        فتح الباب والانتقال ⬅️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Station 2: Equations -->
+            <div id="station-2" class="station">
+                <h2 class="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-800 w-10 h-10 rounded-full flex items-center justify-center ml-3 shadow-sm border border-blue-300">2</span>
+                    الغرفة الثانية: الخزنة الرقمية
+                </h2>
+                <p class="mb-6 text-slate-600 font-semibold bg-slate-50 p-3 rounded-lg border-r-4 border-blue-400">
+                    أمامك 3 معادلات. قيمة كل متغير (<span class="math-text text-sm p-1 ml-1 mr-1">x</span>) تمثل رقماً مهماً لفتح الخزنة الرئيسية لتمر للغرفة الأخيرة.
+                </p>
+
+                <div class="space-y-4 px-2 md:px-10">
+                    <!-- Eq A -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                            <span class="math-text text-xl">3x + 4 = 19</span>
+                        </div>
+                    </div>
+
+                    <!-- Eq B -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                            <span class="math-text text-xl">2(x + 3) = 14</span>
+                        </div>
+                    </div>
+
+                    <!-- Eq C -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</span>
+                            <span class="math-text text-xl">4x = x + 12</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Digital Safe Lock -->
+                <div class="mt-10 bg-gradient-to-br from-slate-700 to-slate-900 p-8 rounded-2xl border-8 border-slate-800 text-center shadow-2xl relative">
+                    <div class="w-16 h-4 bg-red-500 rounded-full mx-auto mb-6 opacity-80" id="safe-indicator"></div>
+                    
+                    <h3 class="text-white text-3xl font-bold mb-4 flex items-center justify-center gap-3">
+                        <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        خزنة العبور
+                    </h3>
+                    <label class="block text-slate-400 font-bold mb-6">أدخل التوليفة المكونة من حلول المعادلات الـ 3:</label>
+                    
+                    <div class="flex justify-center gap-3 sm:gap-6" dir="ltr">
+                        <div class="relative">
+                            <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-slate-400 font-bold">Eq 1</span>
+                            <input type="text" id="s2-d1" maxlength="1" class="number-lock" oninput="this.value=this.value.replace(/[^0-9-]/g,'')">
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-slate-400 font-bold">Eq 2</span>
+                            <input type="text" id="s2-d2" maxlength="1" class="number-lock" oninput="this.value=this.value.replace(/[^0-9-]/g,'')">
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-slate-400 font-bold">Eq 3</span>
+                            <input type="text" id="s2-d3" maxlength="1" class="number-lock" oninput="this.value=this.value.replace(/[^0-9-]/g,'')">
+                        </div>
+                    </div>
+
+                    <div id="error-2" class="hidden mt-6 text-red-100 font-bold bg-red-600 p-3 rounded-lg text-center border-2 border-red-800 transition-all">
+                        ❌ التوليفة خاطئة، صفرت الإنذار! حل المعادلات بشكل صحيح للعبور.
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button onclick="checkStation2()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-full shadow-lg transition text-xl w-full sm:w-auto">
+                        إدخال الرمز وفتح الخزنة ⬅️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Station 3: Word Problem -->
+            <div id="station-3" class="station">
+                <h2 class="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-800 w-10 h-10 rounded-full flex items-center justify-center ml-3 shadow-sm border border-blue-300">3</span>
+                    الغرفة الأخيرة: أحجية المحقق
+                </h2>
+                
+                <div class="bg-yellow-50 border-r-4 border-yellow-400 p-6 mb-8 rounded-l-xl shadow-md relative">
+                    <svg class="w-12 h-12 text-yellow-300 absolute top-4 left-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                    <h3 class="font-extrabold text-xl mb-3 text-slate-800">مذكرات الهروب:</h3>
+                    <p class="text-slate-700 leading-relaxed text-lg">
+                        اشترى <strong>دريد</strong> 3 دفاتر، واشترت <strong>رانية</strong> كتاباً واحداً.<br>
+                        سعر الكتاب الواحد يزيد بـ 20 شاقلاً عن سعر الدفتر الواحد (<span class="math-text bg-transparent border-0 p-0">x</span>).<br>
+                        دفعا معاً للبائع 60 شاقلاً.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm mb-10 text-center">
+                    <p class="font-bold text-lg mb-4 text-slate-800">لتتمكن من فتح الصندوق الذهبي الأخير، قم بصياغة المعادلة وحلها لمعرفة سعر كل منهما.</p>
+                    <p class="text-blue-700 font-bold">الرمز السري النهائي يتكون من 4 أرقام: سعر الدفتر وبجانبه مباشرةً سعر الكتاب.</p>
+                </div>
+
+                <!-- Final Treasure Box -->
+                <div class="mt-8 bg-gradient-to-b from-yellow-700 to-yellow-900 p-8 rounded-2xl border-8 border-yellow-600 text-center shadow-[0_10px_30px_rgba(0,0,0,0.4)] relative">
+                    <div class="w-32 h-32 mx-auto mb-4 bg-yellow-400 rounded-full flex items-center justify-center border-4 border-yellow-300 shadow-[0_0_20px_#facc15]">
+                        <span class="text-6xl drop-shadow-md">📦</span>
+                    </div>
+
+                    <h3 class="text-yellow-100 text-2xl font-bold mb-6">قفل الصندوق السري (4 أرقام):</h3>
+                    
+                    <div class="flex justify-center" dir="ltr">
+                        <input type="text" id="station3-lock" maxlength="4" class="w-48 text-center text-4xl font-extrabold p-3 rounded-lg text-slate-800 bg-white border-4 border-yellow-500 focus:border-yellow-200 focus:outline-none tracking-[0.5em] shadow-inner" placeholder="----">
+                    </div>
+
+                    <div id="error-3" class="hidden mt-6 text-yellow-100 font-bold bg-red-600/90 p-3 rounded-lg text-center border-2 border-red-400">
+                        ❌ الرمز غير صحيح! الصندوق مقفل. تأكد من الأسعار ومكانها (الدفتر ثم الكتاب).
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button onclick="checkStation3()" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-extrabold py-4 px-12 rounded-full shadow-[0_5px_15px_rgba(234,179,8,0.5)] transition text-2xl transform hover:scale-105">
+                        🔓 إدخال الرمز السري وفتح الصندوق!
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success Screen (Certificate) -->
+            <div id="success" class="station text-center py-4">
+                
+                <div id="certificateContainer" class="mb-8 relative bg-white border-8 border-yellow-400 p-4 sm:p-6 md:p-8 rounded-xl shadow-2xl max-w-2xl mx-auto overflow-hidden">
+                    <!-- Subtle background inside certificate -->
+                    <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#14b8a6 2px, transparent 2px); background-size: 20px 20px;"></div>
+                    
+                    <div class="border-4 border-dotted border-blue-200 p-6 rounded-lg relative z-10 bg-white/95 pb-4">
+                        <div class="text-6xl mb-4 text-center">🏆</div>
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-blue-800 mb-2 text-center">شهادة عبور غرقة الهروب</h2>
+                        <h3 class="text-xl md:text-2xl text-slate-600 mb-6 text-center">تحدي أبطال الجبر - صف 8.2</h3>
+                        
+                        <p class="text-lg md:text-xl text-slate-700 mb-2 text-center">تشهد إدارة التحدي بأن الطالب/ة المحقق:</p>
+                        <p id="cert-student-name" class="text-2xl md:text-4xl font-extrabold text-blue-600 mb-6 text-center border-b-[3px] border-blue-200 inline-block pb-3 px-8 mx-auto w-full md:w-4/5 leading-relaxed">اسم الطالب</p>
+                        
+                        <p id="success-title" class="text-xl font-bold text-slate-800 mb-2 truncate">عمل رائع! أنت بطل الجبر!</p>
+                        <p id="success-message" class="text-md md:text-lg text-slate-700 mb-8 text-center leading-relaxed">
+                            لقد تمكنت من فك رموز الغرفة بكل براعة وحللت جميع المعادلات بطريقة صحيحة للهروب بنجاح.
+                        </p>
+
+                        <div class="flex justify-between items-end mt-4 px-2 sm:px-6">
+                            <div class="text-center">
+                                <p class="text-sm md:text-base text-slate-600 font-bold mb-1">الرتبة:</p>
+                                <p class="text-lg md:text-xl text-yellow-600 font-extrabold bg-yellow-50 px-3 py-1 border border-yellow-200 rounded-lg">المحقق البطل 🥇</p>
+                            </div>
+                            <div class="text-center group">
+                                <div class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-yellow-100 to-yellow-300 rounded-full flex items-center justify-center border-4 border-yellow-500 mx-auto text-yellow-700 text-3xl mb-2 shadow-inner transform transition hover:scale-110">
+                                    <svg class="w-10 h-10 md:w-12 md:h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <p class="text-xs md:text-sm text-slate-500 font-bold">ختم العبقرية</p>
+                            </div>
+                        </div>
+
+                        <!-- Requested Footer details inside the certificate -->
+                        <div class="mt-8 border-t-2 border-dashed border-slate-300 pt-4">
+                            <p class="text-sm md:text-base text-slate-500 font-bold text-center">الفعالية من تصميم وإعداد:<br/> <span class="text-blue-700 text-lg">المعلمة ريم والأستاذ أحمد</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
+                    <button id="downloadBtn" onclick="shareCertificate()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-[0_5px_15px_rgba(79,70,229,0.4)] transition flex items-center justify-center gap-3 transform hover:-translate-y-1 w-full sm:w-auto text-xl">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        تحميل الشهادة / واتساب
+                    </button>
+                    <button onclick="location.reload()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-4 px-8 rounded-xl shadow transition w-full sm:w-auto text-xl">
+                        🔄 إعادة التحدي
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Update Progress Bar
+        function updateProgress(percentage, text) {
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = text;
+        }
+
+        // Show specific screen
+        function showScreen(id) {
+            document.querySelectorAll('.station').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        let globalStudentName = "";
+
+        // Start from intro
+        function startChallenge() {
+            const nameInput = document.getElementById('studentName').value.trim();
+            if(nameInput.length < 3) {
+                document.getElementById('nameError').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('nameError').classList.add('hidden');
+            globalStudentName = nameInput;
+            document.getElementById('cert-student-name').innerText = globalStudentName;
+
+            showScreen('station-1');
+            updateProgress(25, 'الغرفة 1 من 3');
+        }
+
+        // Check Station 1 (Escape Room Lock Logic)
+        function checkStation1() {
+            let code = document.getElementById('station1-lock').value.trim();
+            const errorDiv = document.getElementById('error-1');
+            
+            // Text normalization: remove spaces, convert all forms of Alef to regular Alef.
+            code = code.replace(/\s+/g, '').replace(/[أإآا]/g, 'ا');
+
+            // Correct code: Q1 is B(ب), Q2 is A(أ). Code = 'با'
+            if (code === 'با') {
+                errorDiv.classList.add('hidden');
+                showScreen('station-2');
+                updateProgress(50, 'الغرفة 2 من 3');
+            } else {
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // Check Station 2 (Safe Combination Logc)
+        function checkStation2() {
+            // Correct combination: 5, 4, 4
+            const d1 = document.getElementById('s2-d1').value.trim();
+            const d2 = document.getElementById('s2-d2').value.trim();
+            const d3 = document.getElementById('s2-d3').value.trim();
+            const errorDiv = document.getElementById('error-2');
+            const safeIndicator = document.getElementById('safe-indicator');
+
+            if (d1 === "5" && d2 === "4" && d3 === "4") {
+                errorDiv.classList.add('hidden');
+                safeIndicator.classList.remove('bg-red-500');
+                safeIndicator.classList.add('bg-green-500'); // Green light before moving on
+                
+                setTimeout(() => {
+                    showScreen('station-3');
+                    updateProgress(75, 'الغرفة 3 من 3');
+                }, 600);
+            } else {
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // Check Station 3 (Treasure Lock Logic)
+        function checkStation3() {
+            // Notebook = 10, Book = 30. Code = 1030
+            const code = document.getElementById('station3-lock').value.trim();
+            const errorDiv = document.getElementById('error-3');
+
+            if (code === "1030") {
+                errorDiv.classList.add('hidden');
+                
+                const titles = [
+                    "عمل رائع! أنت بطل الجبر!",
+                    "يا لك من محقق عبقري!",
+                    "مذهل! أثبتّ ذكاءك الرياضي بجدارة!",
+                    "هروب أسطوري يا بطل!",
+                    "ذكاؤك الرياضي فتح المستحيل!"
+                ];
+                const messages = [
+                    "لقد قمت بفك جميع الشفرات بنجاح وحل جميع المعادلات بطريقة صحيحة.",
+                    "تستحق هذا الانتصار، لقد تمكنت من فك رموز الغرفة بكل براعة.",
+                    "نجحت في فتح الصندوق الذهبي بقدراتك العقلية المدهشة. استمر!",
+                    "كل قفل كان يشهد على عبقريتك في التفكير. مبروك!",
+                    "نجحت في الهروب وأثبتّ أنك لا تُقهر في الرياضيات."
+                ];
+                
+                const randomIndex = Math.floor(Math.random() * titles.length);
+                document.getElementById('success-title').innerText = titles[randomIndex];
+                document.getElementById('success-message').innerText = messages[randomIndex];
+
+                showScreen('success');
+                updateProgress(100, 'تم الهروب بنجاح!');
+                confettiEffect();
+            } else {
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // Generate and Share/Download Certificate
+        async function shareCertificate() {
+            const btn = document.getElementById('downloadBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'جاري المعالجة... ⏳';
+            btn.disabled = true;
+
+            const certElement = document.getElementById('certificateContainer');
+            
+            try {
+                // Adjusting scale ensures a very high-quality readable photo for WhatsApp
+                const canvas = await html2canvas(certElement, { 
+                    scale: 3,
+                    backgroundColor: '#ffffff'
+                });
+                
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], `شهادة_عبور_غرفة_الهروب_${globalStudentName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    
+                    // Try Web Share API first (Mobile devices)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: 'شهادة بطل الجبر',
+                                text: `أنا المحقق البطل: ${globalStudentName}! 🏆 لقد تمكنت من الهروب!`,
+                                files: [file]
+                            });
+                        } catch (err) {
+                            forceDownload(blob, file.name);
+                        }
+                    } else {
+                        // Fallback to direct download
+                        forceDownload(blob, file.name);
+                        alert('تم تنزيل الشهادة بنجاح لك في جهازك! يمكنك الآن الدخول للواتساب وإرسالها لمعلميك.');
+                    }
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error('Error generating certificate:', error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('حدث خطأ أثناء محاولة إنشاء الشهادة. الرجاء المحاولة مرة أخرى.');
+            }
+        }
+
+        function forceDownload(blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Confetti logic
+        function confettiEffect() {
+            const colors = ['#2563eb', '#facc15', '#f43f5e', '#3b82f6', '#14b8a6'];
+            // Increase confetti quantity for the final escape
+            for(let i=0; i<80; i++) {
+                let confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.width = '12px';
+                confetti.style.height = '12px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.zIndex = '9999';
+                confetti.style.animation = `fall ${Math.random() * 3 + 2}s linear forwards`;
+                document.body.appendChild(confetti);
+                
+                // Cleanup
+                setTimeout(() => confetti.remove(), 5000);
+            }
+            
+            if (!document.getElementById('confetti-style')) {
+                const style = document.createElement('style');
+                style.id = 'confetti-style';
+                style.innerHTML = `@keyframes fall { to { transform: translateY(110vh) rotate(1080deg); } }`;
+                document.head.appendChild(style);
+            }
+        }
+    </script>
+</body>
+</html>
